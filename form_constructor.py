@@ -1,72 +1,53 @@
 import tkinter as tk
+from tkinter import Listbox, END
 
 
 class FormConstructor():
-    def __init__(self, form_file='file.txt', data_file='data.txt'):
-        self.widg = {}
-        self.field = []
+    def __init__(self, parent, form_file):
+        self.parent = parent
         self.form_file = form_file
-        self.data_file = data_file
+        self.fields = []
+        self.widgets = {}
+        self.load_form()
 
-    def load(self):
-        try:
-            with open(self.form_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        name, field = line.rsplit(' ', 1)
-                        self.field.append((name, field))
-        except FileNotFoundError:
-            tk.messagebox.showerror("Помилка", f"Файл {self.form_file} не знайдено")
-            self.field = []
+    def load_form(self):
+        with open(self.form_file, 'r', encoding='utf-8') as file:
+            for line in file:
+                name, field = line.strip().split(maxsplit=1)
+                self.fields.append((name, field))
 
+    def create_form(self, frame):
+        for name, field_type in self.fields:
+            label = tk.Label(frame, text=name)
+            label.pack(anchor='w')
 
-    def create_form(self, container):
-        for _, (name, field) in enumerate(self.field):
-            label = tk.Label(container, text=name)
-            label.grid(row=_, column=0)
+            if '()' in field_type:
+                entry = tk.Entry(frame)
+                entry.pack(fill='x')
+                self.widgets[name] = entry
 
-
-            if field.startwith('[') and field.endswith(']'):
-                options = field[1:-1].split(',')
-                var = tk.StringVar()
-                lb = tk.Listbox(container, height=len(options), exportselection=0)
+            elif '[' in field_type and ']' in field_type:
+                options = field_type.strip('[]').split(',')
+                listbox = Listbox(frame, exportselection=0, height=len(options))
                 for opt in options:
-                    lb.insert(tk.END, opt)
-                lb.grid(row=_, column=1)
-                lb.bind('<<ListboxSelect>>', lambda e, v=var, l=lb: self.on_select(e, v, l))
-                self.widg[name] = (lb, var)
-            else:
-                entry = tk.Entry(container)
-                entry.grid(row=_, column=1)
-                self.widg[name] = (entry, None)
+                    listbox.insert(END, opt)
+                listbox.pack()
+                self.widgets[name] = listbox
 
-
-    def on_select(self, ev, var, listbox):
-        selection = listbox.curselection()
-        if selection:
-            var.set(listbox.get(selection[0]))
-
-    def save_data(self):
+    def get_data(self):
         data = []
-        for name, _ in self.field:
-            widget, var = self.widg[name]
-            if var:  # Якщо лістбоксік
-                value = var.get()
-            else: # Ентрішка
+        for name, widget in self.widgets.items():
+            if isinstance(widget, tk.Entry):
                 value = widget.get()
+            elif isinstance(widget, Listbox):
+                selections = widget.curselection()
+                value = ','.join([widget.get(i) for i in selections])
             data.append(f'"{value}"')
+        return ','.join(data)
 
-        with open(self.data_file, 'a', encoding='utf-8') as f:
-            f.write(','.join(data) + '\n')
-        return data
-
-
-    def clear_fields(self):
-        for name, _ in self.field:
-            widget, var = self.widg[name]
-            if var:
-                widget.selection_clear(0, tk.END)
-                var.set('')
-            else:
-                widget.delete(0, tk.END)
+    def clear_form(self):
+        for widget in self.widgets.values():
+            if isinstance(widget, tk.Entry):
+                widget.delete(0, END)
+            elif isinstance(widget, Listbox):
+                widget.selection_clear(0, END)

@@ -21,29 +21,25 @@ class FormsGUI:
 
 
     def open_form_file(self):
-        try:
-            file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
-            if not file_path:
-                return
+        file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
+        if not file_path:
+            return
 
-            if hasattr(self, 'main_frame'):
-                self.main_frame.destroy()
+        if hasattr(self, 'main_frame'):
+            self.main_frame.destroy()
 
-            self.main_frame = tk.Frame(self.root)
-            self.main_frame.pack(padx=10, pady=10, fill='both', expand=True)
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(padx=10, pady=10, fill='both', expand=True)
 
-            self.form_constructor = FormConstructor(self.root, file_path)
-            self.form_constructor.create_form(self.main_frame)
+        self.form_constructor = FormConstructor(self.root, file_path)
+        self.form_constructor.create_form(self.main_frame)
 
-            button_frame = tk.Frame(self.main_frame)
-            button_frame.pack(pady=10)
+        button_frame = tk.Frame(self.main_frame)
+        button_frame.pack(pady=10)
 
-            tk.Button(button_frame, text="Далі", command=self.on_next).pack(side='left', padx=5)
-            tk.Button(button_frame, text="Готово", command=self.on_done).pack(side='left', padx=5)
-            tk.Button(button_frame, text="Відмінити", command=self.on_cancel).pack(side='left', padx=5)
-
-        except Exception as e:
-            messagebox.showerror("неочікувана помилка")
+        tk.Button(button_frame, text="Далі", command=self.on_next).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Готово", command=self.on_done).pack(side='left', padx=5)
+        tk.Button(button_frame, text="Відмінити", command=self.on_cancel).pack(side='left', padx=5)
 
     def on_next(self):
         if self.form_constructor:
@@ -56,18 +52,21 @@ class FormsGUI:
             self.show_saved_data()
             self.root.quit()
 
-    def on_cancel(self):
-        if self.form_constructor:
-            self.form_constructor.clear_form()
-
     def save_data(self):
         data = self.form_constructor.get_data()
-        if any(val == "" for val in data):
-            tk.messagebox.showwarning(message = "Будь ласка, заповніть усі поля.")
-            return
-        line = ",".join(f'"{value}"' for value in data)
-        with open(self.data_file, "a", encoding="utf-8") as file:
-            file.write(line + "\n")
+        with open(self.data_file, 'a', encoding='utf-8') as f:
+            f.write(data + '\n')
+
+    def on_next(self):
+        self.save_data()
+        self.form_constructor.clear_form()
+
+    def on_done(self):
+        self.save_data()
+        self.show_saved_data()
+
+    def on_cancel(self):
+        self.form_constructor.clear_form()
 
     def show_saved_data(self):
         new_window = tk.Toplevel(self.root)
@@ -78,4 +77,11 @@ class FormsGUI:
 
         for line in lines:
             tk.Label(new_window, text=line.strip()).pack(anchor='w', padx=10)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FormsGUI(root)
+    root.mainloop()
+
 
