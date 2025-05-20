@@ -43,7 +43,9 @@ class FormConstructor():
 
 
     def on_select(self, ev, var, listbox):
-        pass
+        selection = listbox.curselection()
+        if selection:
+            var.set(listbox.get(selection[0]))
 
     def save_data(self):
         data = []
