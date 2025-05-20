@@ -1,4 +1,4 @@
-import tkinker as tk
+import tkinter as tk
 
 
 class FormConstructor():
